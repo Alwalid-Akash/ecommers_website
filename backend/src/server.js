@@ -1,11 +1,6 @@
 const express = require("express");
-
 const cors = require("cors");
 require("dotenv").config();
-
-console.log("Database:", process.env.DB_NAME);
-
-
 const pool = require("./config/db");
 
 

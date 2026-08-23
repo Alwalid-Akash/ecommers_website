@@ -6,6 +6,8 @@ const pool = require("./config/db");
 
 const categoryRoutes = require("./routes/categoryRoutes");
 const productRoutes = require("./routes/productRoutes");
+const authRoutes = require("./routes/authRoutes");
+
 const errorHandler = require("./middleware/errorMiddleware");
 
 const swaggerUi = require("swagger-ui-express");
@@ -32,6 +34,7 @@ app.use(
 
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/auth", authRoutes);
 app.use(errorHandler);
 
 

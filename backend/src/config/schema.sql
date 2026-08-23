@@ -3,10 +3,12 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL DEFAULT 'customer',
+    role VARCHAR(20) NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'admin')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
 
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
@@ -46,29 +48,27 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 
 
--- Category name is already UNIQUE,
--- so PostgreSQL automatically creates an index for it.
-
 -- Product category filtering
-CREATE INDEX idx_products_category_id
+-- Product category filtering
+CREATE INDEX IF NOT EXISTS idx_products_category_id
 ON products(category_id);
 
 -- Product name searching
-CREATE INDEX idx_products_name
+CREATE INDEX IF NOT EXISTS idx_products_name
 ON products(name);
 
 -- Product price sorting/filtering
-CREATE INDEX idx_products_price
+CREATE INDEX IF NOT EXISTS idx_products_price
 ON products(price);
 
 -- Orders by user
-CREATE INDEX idx_orders_user_id
+CREATE INDEX IF NOT EXISTS idx_orders_user_id
 ON orders(user_id);
 
 -- Order items by order
-CREATE INDEX idx_order_items_order_id
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id
 ON order_items(order_id);
 
 -- Order items by product
-CREATE INDEX idx_order_items_product_id
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id
 ON order_items(product_id);

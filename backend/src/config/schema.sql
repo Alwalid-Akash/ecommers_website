@@ -43,3 +43,32 @@ CREATE TABLE IF NOT EXISTS order_items (
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     price NUMERIC(10, 2) NOT NULL CHECK (price >= 0)
 );
+
+
+
+-- Category name is already UNIQUE,
+-- so PostgreSQL automatically creates an index for it.
+
+-- Product category filtering
+CREATE INDEX idx_products_category_id
+ON products(category_id);
+
+-- Product name searching
+CREATE INDEX idx_products_name
+ON products(name);
+
+-- Product price sorting/filtering
+CREATE INDEX idx_products_price
+ON products(price);
+
+-- Orders by user
+CREATE INDEX idx_orders_user_id
+ON orders(user_id);
+
+-- Order items by order
+CREATE INDEX idx_order_items_order_id
+ON order_items(order_id);
+
+-- Order items by product
+CREATE INDEX idx_order_items_product_id
+ON order_items(product_id);

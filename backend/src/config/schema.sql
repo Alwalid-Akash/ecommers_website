@@ -46,7 +46,17 @@ CREATE TABLE IF NOT EXISTS order_items (
     price NUMERIC(10, 2) NOT NULL CHECK (price >= 0)
 );
 
-
+ALTER TABLE orders
+ADD CONSTRAINT orders_status_check
+CHECK (
+    status IN (
+        'pending',
+        'processing',
+        'shipped',
+        'delivered',
+        'cancelled'
+    )
+);
 
 -- Product category filtering
 -- Product category filtering

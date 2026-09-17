@@ -5,14 +5,20 @@ import ProductCard from "./ProductCard";
 function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setError("");
         const response = await api.get("/products");
-        setProducts(response.data.products);
+        setProducts(response.data.products ?? []);
       } catch (error) {
         console.error(error);
+        setError(
+          error.response?.data?.message ||
+          "Failed to load products"
+        );
       } finally {
         setLoading(false);
       }
@@ -23,6 +29,21 @@ function Products() {
 
   if (loading) {
     return <p>Loading...</p>;
+  }
+
+  if (error) {
+    return <div className="alert alert-danger">{error}</div>;
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-5">
+        <h3>No products available</h3>
+        <p className="text-muted">
+          Check back later for new items.
+        </p>
+      </div>
+    );
   }
 
   return (

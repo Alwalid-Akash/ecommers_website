@@ -20,23 +20,19 @@ export function CartProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
-  // Fetch cart
   const fetchCart = async () => {
     if (!isAuthenticated) {
-      setCart({
-        items: [],
-        total: 0,
-      });
-
+      setCart({ items: [], total: 0 });
       return;
     }
 
     try {
       setLoading(true);
-
       const response = await api.get("/cart");
-
-      setCart(response.data.cart);
+      setCart({
+        items: response.data.items ?? [],
+        total: response.data.total ?? 0,
+      });
     } catch (error) {
       console.error("Failed to fetch cart:", error);
     } finally {
@@ -44,66 +40,27 @@ export function CartProvider({ children }) {
     }
   };
 
-  // Add product
   const addToCart = async (productId, quantity = 1) => {
-    try {
-      const response = await api.post("/cart", {
-        product_id: productId,
-        quantity,
-      });
-
-      setCart(response.data.cart);
-
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    await api.post("/cart", {
+      product_id: productId,
+      quantity,
+    });
+    await fetchCart();
   };
 
-  // Update quantity
   const updateCartItem = async (productId, quantity) => {
-    try {
-      const response = await api.put(
-        `/cart/${productId}`,
-        {
-          quantity,
-        }
-      );
-
-      setCart(response.data.cart);
-
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    await api.put(`/cart/${productId}`, { quantity });
+    await fetchCart();
   };
 
-  // Remove item
   const removeFromCart = async (productId) => {
-    try {
-      const response = await api.delete(
-        `/cart/${productId}`
-      );
-
-      setCart(response.data.cart);
-
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    await api.delete(`/cart/${productId}`);
+    await fetchCart();
   };
 
-  // Clear cart
   const clearCart = async () => {
-    try {
-      const response = await api.delete("/cart");
-
-      setCart(response.data.cart);
-
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    await api.delete("/cart");
+    await fetchCart();
   };
 
   useEffect(() => {
@@ -112,6 +69,7 @@ export function CartProvider({ children }) {
 
   const value = {
     cart,
+    setCart,
     loading,
     fetchCart,
     addToCart,

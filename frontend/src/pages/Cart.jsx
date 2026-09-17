@@ -20,11 +20,9 @@ function Cart() {
     return (
       <div className="text-center py-5">
         <h2>Your cart is empty</h2>
-
         <p className="text-muted">
           Add some products to your cart.
         </p>
-
         <Link to="/products" className="btn btn-primary">
           Continue Shopping
         </Link>
@@ -36,7 +34,6 @@ function Cart() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>Your Cart</h1>
-
         <button
           type="button"
           className="btn btn-outline-danger"
@@ -59,7 +56,6 @@ function Cart() {
 
                   <div className="col-md-3">
                     <label className="form-label">Quantity</label>
-
                     <input
                       type="number"
                       min="1"
@@ -83,7 +79,9 @@ function Cart() {
                     <button
                       type="button"
                       className="btn btn-sm btn-outline-danger"
-                      onClick={() => removeFromCart(item.product_id)}
+                      onClick={() =>
+                        removeFromCart(item.product_id)
+                      }
                     >
                       Remove
                     </button>
@@ -98,7 +96,6 @@ function Cart() {
           <div className="card">
             <div className="card-body">
               <h4>Order Summary</h4>
-
               <hr />
 
               <div className="d-flex justify-content-between">

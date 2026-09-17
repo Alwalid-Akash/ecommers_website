@@ -40,7 +40,6 @@ function ProductCard({ product }) {
 
   return (
     <div className="card h-100">
-
       {product.image_url && (
         <img
           src={product.image_url}
@@ -50,22 +49,11 @@ function ProductCard({ product }) {
       )}
 
       <div className="card-body d-flex flex-column">
+        <h5 className="card-title">{product.name}</h5>
+        <p className="card-text">{product.description}</p>
 
-        <h5 className="card-title">
-          {product.name}
-        </h5>
-
-        <p className="card-text">
-          {product.description}
-        </p>
-
-        <h5 className="mt-auto">
-          €{product.price}
-        </h5>
-
-        <p className="text-muted">
-          Stock: {product.stock}
-        </p>
+        <h5 className="mt-auto">€{product.price}</h5>
+        <p className="text-muted">Stock: {product.stock}</p>
 
         {message && (
           <div className="alert alert-success py-2">
@@ -80,7 +68,6 @@ function ProductCard({ product }) {
         )}
 
         <div className="d-grid gap-2">
-
           <Link
             to={`/products/${product.id}`}
             className="btn btn-outline-primary"
@@ -89,11 +76,10 @@ function ProductCard({ product }) {
           </Link>
 
           <button
+            type="button"
             className="btn btn-primary"
             onClick={handleAddToCart}
-            disabled={
-              adding || product.stock === 0
-            }
+            disabled={adding || product.stock === 0}
           >
             {product.stock === 0
               ? "Out of Stock"
@@ -101,9 +87,7 @@ function ProductCard({ product }) {
                 ? "Adding..."
                 : "Add to Cart"}
           </button>
-
         </div>
-
       </div>
     </div>
   );

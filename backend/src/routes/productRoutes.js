@@ -14,9 +14,7 @@ const {
   createProductSchema,
 } = require("../validators/productValidator");
 
-const { protect } = require("../middleware/authMiddleware");
-
-const authorize = require("../middleware/roleMiddleware");
+const { protect, authorize } = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 

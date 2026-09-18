@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-// Controllers
+// ✅ Import all three middleware from roleMiddleware
+const { protect, authorize } = require("../middleware/roleMiddleware");
+
 const {
   getCategories,
   getCategoryById,
@@ -10,56 +12,13 @@ const {
   deleteCategory,
 } = require("../controllers/categoryController");
 
-// Middleware
-const validate = require("../middleware/validate");
-const { protect } = require("../middleware/authMiddleware");
-const authorize = require("../middleware/roleMiddleware");
-
-// Validators
-const {
-  createCategorySchema,
-  updateCategorySchema,
-  categoryIdSchema,  // For validating ID params
-} = require("../validators/categoryValidator");
-
-// ============================
-// PUBLIC ROUTES (No auth required)
-// ============================
-
-// GET all categories
+// Public routes
 router.get("/", getCategories);
-
-// GET category by ID
 router.get("/:id", getCategoryById);
 
-// ============================
-// PROTECTED ROUTES (Admin only)
-// ============================
-
-// POST create category
-router.post(
-  "/",
-  protect,                          // Must be logged in
-  authorize("admin"),               // Must be admin
-  validate(createCategorySchema),   // Validate body
-  createCategory
-);
-
-// PUT update category
-router.put(
-  "/:id",
-  protect,
-  authorize("admin"),
-  validate(updateCategorySchema),   // ← Added validation
-  updateCategory
-);
-
-// DELETE category
-router.delete(
-  "/:id",
-  protect,
-  authorize("admin"),
-  deleteCategory
-);
+// Admin routes
+router.post("/", protect, authorize("admin"), createCategory);
+router.put("/:id", protect, authorize("admin"), updateCategory);
+router.delete("/:id", protect, authorize("admin"), deleteCategory);
 
 module.exports = router;

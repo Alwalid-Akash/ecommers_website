@@ -16,6 +16,9 @@ import OrderDetails from "./pages/OrderDetails";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminRoute from "./components/AdminRoute";
+
 function Home() {
   return (
     <div className="text-center py-5">
@@ -79,6 +82,14 @@ function App() {
               <ProtectedRoute>
                 <OrderDetails />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             }
           />
         </Routes>

@@ -6,11 +6,7 @@ const {
   updateOrderStatus,
 } = require("../controllers/adminOrderController");
 
-// authMiddleware.js exports { protect } → needs { }
-const { protect } = require("../middleware/authMiddleware");
-
-// roleMiddleware.js exports the function directly → NO { }
-const authorize = require("../middleware/roleMiddleware");
+const { protect, authorize } = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 

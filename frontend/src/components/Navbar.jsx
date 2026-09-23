@@ -28,6 +28,7 @@ function Navbar() {
           <span className="navbar-toggler-icon" />
         </button>
 
+<<<<<<< Updated upstream
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
@@ -36,6 +37,23 @@ function Navbar() {
 
             <li className="nav-item">
               <Link className="nav-link" to="/products">Products</Link>
+=======
+        {/* Navbar Content */}
+        <div
+          className="collapse navbar-collapse"
+          id="navbarContent"
+        >
+
+          {/* Left Side */}
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+
+
+
+            <li className="nav-item">
+              <Link to="/products" className="nav-link">
+                Home
+              </Link>
+>>>>>>> Stashed changes
             </li>
 
             <li className="nav-item">

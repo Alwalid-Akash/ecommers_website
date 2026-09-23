@@ -13,8 +13,14 @@ const adminOrderRoutes = require("./routes/adminOrderRoutes");
 
 const errorHandler = require("./middleware/errorMiddleware");
 
+<<<<<<< Updated upstream
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./docs/swagger");
+=======
+
+
+// -------------------- APP --------------------
+>>>>>>> Stashed changes
 const app = express();
 
 
@@ -30,11 +36,16 @@ app.get("/", (req, res) => {
   });
 });
 
+<<<<<<< Updated upstream
 app.use(
   "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec)
 );
+=======
+
+
+>>>>>>> Stashed changes
 
 
 app.use("/api/categories", categoryRoutes);

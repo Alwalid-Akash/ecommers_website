@@ -15,9 +15,6 @@ const adminDashboardRoutes = require("./routes/adminDashboardRoutes");
 // -------------------- MIDDLEWARE --------------------
 const errorHandler = require("./middleware/errorMiddleware");
 
-// -------------------- SWAGGER --------------------
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./docs/swagger");
 
 // -------------------- APP --------------------
 const app = express();
@@ -32,12 +29,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// -------------------- API DOCS --------------------
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec)
-);
 
 // -------------------- PUBLIC / GENERAL ROUTES --------------------
 app.use("/api/categories", categoryRoutes);

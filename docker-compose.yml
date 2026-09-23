@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: ./backend # ✅ Build from backend/ folder
+    image: mdalwalid/ecommerce-backend:latest # ✅ Explicit name for Docker Hub push later
+    container_name: ecommerce-backend # ✅ Fixed name (easier logs/exec)
+    ports:
+      - "3000:3000" # ✅ Mac:3000 → container:3000 (matches Dockerfile EXPOSE)
+    env_file:
+      - ./backend/.env # ✅ Loads secrets at RUNTIME (not baked into image)
+    environment:
+      - NODE_ENV=production # ✅ Overrides .env value (forces prod mode)
+      - PORT=3000 # ✅ Ensures Express listens on 3000
+    restart: unless-stopped # ✅ Auto-restart unless you manually stop it
+    networks:
+      - app-network # ✅ Isolated network for container-to-container
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:3000/api # ✅ Baked into React bundle at BUILD time
+    image: mdalwalid/ecommerce-frontend:latest
+    container_name: ecommerce-frontend
+    ports:
+      - "8080:80" # ✅ Mac:8080 → container:80 (nginx)
+    depends_on:
+      - backend # ✅ Start backend first
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge # ✅ Default bridge network

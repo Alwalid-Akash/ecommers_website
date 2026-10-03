@@ -88,7 +88,7 @@ function AdminDashboard() {
   // Error
   if (error) {
     return (
-      <div>
+      <div className="admin-page">
         <h1 className="mb-4">
           Admin Dashboard
         </h1>
@@ -110,13 +110,13 @@ function AdminDashboard() {
   }
 
   return (
-    <div>
+    <div className="admin-page">
       {/* =========================
           HEADER
       ========================== */}
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+      <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
+        <div className="admin-page">
           <h1>Admin Dashboard</h1>
 
           <p className="text-muted mb-0">
@@ -126,7 +126,7 @@ function AdminDashboard() {
 
         {/* Admin Management Buttons */}
 
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           <Link
             to="/admin/products"
             className="btn btn-outline-primary"
@@ -154,7 +154,7 @@ function AdminDashboard() {
           STATISTICS
       ========================== */}
 
-      <div className="row g-4">
+      <div className="row g-4 dashboard-stats">
         {/* Total Users */}
 
         <div className="col-md-6 col-xl-3">
@@ -254,7 +254,7 @@ function AdminDashboard() {
 
       <div className="card mt-4 shadow-sm">
         <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center mb-4">
+          <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
             <h4 className="mb-0">
               Order Status
             </h4>
@@ -349,7 +349,7 @@ function AdminDashboard() {
 
       <div className="card mt-4 shadow-sm">
         <div className="card-body">
-          <div className="d-flex justify-content-between align-items-center mb-4">
+          <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
             <h4 className="mb-0">
               Recent Orders
             </h4>

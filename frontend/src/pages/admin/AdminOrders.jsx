@@ -79,7 +79,7 @@ function AdminOrders() {
 
   if (error) {
     return (
-      <div>
+      <div className="admin-page">
         <h1 className="mb-4">
           Manage Orders
         </h1>
@@ -92,11 +92,11 @@ function AdminOrders() {
   }
 
   return (
-    <div>
+    <div className="admin-page">
       {/* Header */}
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+      <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
+        <div className="admin-page">
           <h1>Manage Orders</h1>
 
           <p className="text-muted mb-0">
@@ -154,7 +154,7 @@ function AdminOrders() {
                       {/* Customer */}
 
                       <td>
-                        <div>
+                        <div className="admin-page">
                           <strong>
                             {order.customer_name}
                           </strong>

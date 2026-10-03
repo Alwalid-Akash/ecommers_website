@@ -255,11 +255,11 @@ function AdminProductForm() {
   }
 
   return (
-    <div>
+    <div className="admin-page">
       {/* HEADER */}
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+      <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
+        <div className="admin-page">
           <h1>
             {editMode
               ? "Edit Product"

@@ -86,10 +86,10 @@ function AdminProducts() {
   }
 
   return (
-    <div>
+    <div className="admin-page">
       {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+      <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
+        <div className="admin-page">
           <h1>Manage Products</h1>
 
           <p className="text-muted mb-0">
@@ -97,7 +97,7 @@ function AdminProducts() {
           </p>
         </div>
 
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           <Link
             to="/admin"
             className="btn btn-outline-secondary"
@@ -180,7 +180,7 @@ function AdminProducts() {
                         </strong>
 
                         {product.description && (
-                          <div>
+                          <div className="admin-page">
                             <small className="text-muted">
                               {product.description.length > 60
                                 ? `${product.description.substring(
@@ -235,7 +235,7 @@ function AdminProducts() {
                       </td>
 
                       <td>
-                        <div className="d-flex gap-2">
+                        <div className="d-flex gap-2 flex-wrap">
                           <Link
                             to={`/admin/products/${product.id}/edit`}
                             className="btn btn-sm btn-outline-primary"

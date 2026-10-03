@@ -1,6 +1,7 @@
 import { Routes, Route, Link } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import "./App.css";
 
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
@@ -29,20 +30,14 @@ import AdminCategoryForm from "./pages/admin/AdminCategoryForm";
 
 function Home() {
   return (
-    <div className="text-center py-5">
-      <h1>Welcome to E-Commerce</h1>
-
-      <p className="text-muted">
-        Find the products you need.
-      </p>
-
-      <Link
-        to="/products"
-        className="btn btn-primary mt-3"
-      >
-        Browse Products
-      </Link>
-    </div>
+    <section className="home-hero">
+      <div className="hero-copy">
+        <span className="eyebrow">Welcome to E-Commerce</span>
+        <h1>Everyday shopping,<br />made simple.</h1>
+        <p>Browse our products, find what you need, and shop at your own pace.</p>
+        <Link to="/products" className="btn btn-primary hero-button">Browse products <span aria-hidden="true">→</span></Link>
+      </div>
+    </section>
   );
 }
 
@@ -51,7 +46,7 @@ function App() {
     <>
       <Navbar />
 
-      <main className="container mt-4">
+      <main className="container site-main">
         <Routes>
 
           {/* PUBLIC */}
@@ -214,6 +209,17 @@ function App() {
 
         </Routes>
       </main>
+      <footer className="site-footer">
+        <div className="container footer-content">
+          <div className="footer-brand">
+            <Link to="/" className="footer-logo">E-Commerce<span>.</span></Link>
+            <p>Discover something you’ll love.<br />Make it part of your everyday.</p>
+          </div>
+          <nav aria-label="Footer shop navigation"><span className="footer-heading">Explore</span><Link to="/">Home</Link><Link to="/products">All products</Link></nav>
+          <nav aria-label="Footer account navigation"><span className="footer-heading">Your account</span><Link to="/login">Sign in</Link><Link to="/register">Create an account</Link></nav>
+        </div>
+        <div className="container footer-bottom"><span>© {new Date().getFullYear()} E-Commerce</span><span>Made for your everyday.</span></div>
+      </footer>
     </>
   );
 }

@@ -20,7 +20,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav className="navbar navbar-expand-lg navbar-light site-navbar">
       <div className="container">
 
         {/* Brand */}
@@ -28,7 +28,7 @@ function Navbar() {
           to="/"
           className="navbar-brand fw-bold"
         >
-          E-Commerce
+          <span className="brand-mark" aria-hidden="true">e.</span> E-Commerce
         </Link>
 
         {/* Mobile Toggle */}
@@ -108,7 +108,7 @@ function Navbar() {
                 <li className="nav-item">
                   <button
                     onClick={handleLogout}
-                    className="btn btn-outline-light btn-sm ms-lg-2"
+                    className="btn btn-outline-primary btn-sm ms-lg-2"
                   >
                     Logout
                   </button>

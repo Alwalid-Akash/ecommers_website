@@ -174,11 +174,11 @@ function AdminCategoryForm() {
   }
 
   return (
-    <div>
+    <div className="admin-page">
       {/* HEADER */}
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+      <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
+        <div className="admin-page">
           <h1>
             {editMode
               ? "Edit Category"
@@ -250,7 +250,7 @@ function AdminCategoryForm() {
               />
             </div>
 
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2 flex-wrap">
               <button
                 type="submit"
                 className="btn btn-primary"

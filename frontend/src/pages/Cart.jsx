@@ -18,7 +18,7 @@ function Cart() {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-5">
+      <div className="cart-empty text-center py-5">
         <h2>Your cart is empty</h2>
         <p className="text-muted">
           Add some products to your cart.
@@ -31,9 +31,9 @@ function Cart() {
   }
 
   return (
-    <div>
+    <div className="cart-page">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Your Cart</h1>
+        <div><h1>Your Cart</h1><p className="text-muted mb-0">Review your items before checkout.</p></div>
         <button
           type="button"
           className="btn btn-outline-danger"
@@ -48,7 +48,7 @@ function Cart() {
           {items.map((item) => (
             <div className="card mb-3" key={item.id}>
               <div className="card-body">
-                <div className="row align-items-center">
+                <div className="row align-items-center g-3">
                   <div className="col-md-4">
                     <h5>{item.name}</h5>
                     <p className="text-muted mb-0">€{item.price}</p>
@@ -93,7 +93,7 @@ function Cart() {
         </div>
 
         <div className="col-lg-4">
-          <div className="card">
+          <div className="card cart-summary">
             <div className="card-body">
               <h4>Order Summary</h4>
               <hr />

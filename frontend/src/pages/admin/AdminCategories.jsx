@@ -92,10 +92,10 @@ function AdminCategories() {
   }
 
   return (
-    <div>
+    <div className="admin-page">
       {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+      <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
+        <div className="admin-page">
           <h1>Manage Categories</h1>
 
           <p className="text-muted mb-0">
@@ -103,7 +103,7 @@ function AdminCategories() {
           </p>
         </div>
 
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           <Link
             to="/admin"
             className="btn btn-outline-secondary"
@@ -201,7 +201,7 @@ function AdminCategories() {
                       </td>
 
                       <td>
-                        <div className="d-flex gap-2">
+                        <div className="d-flex gap-2 flex-wrap">
                           <Link
                             to={`/admin/categories/${category.id}/edit`}
                             className="btn btn-sm btn-outline-primary"

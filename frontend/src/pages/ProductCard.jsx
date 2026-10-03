@@ -39,7 +39,7 @@ function ProductCard({ product }) {
   };
 
   return (
-    <div className="card h-100">
+    <div className="card h-100 product-card">
       {product.image_url && (
         <img
           src={product.image_url}

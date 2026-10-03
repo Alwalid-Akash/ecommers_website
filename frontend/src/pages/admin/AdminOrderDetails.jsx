@@ -128,7 +128,7 @@ function AdminOrderDetails() {
 
   if (error && !order) {
     return (
-      <div>
+      <div className="admin-page">
         <div className="alert alert-danger">
           {error}
         </div>
@@ -152,11 +152,11 @@ function AdminOrderDetails() {
   }
 
   return (
-    <div>
+    <div className="admin-page">
       {/* Header */}
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+      <div className="d-flex justify-content-between align-items-center mb-4 page-heading">
+        <div className="admin-page">
           <h1>
             Order #{order.id}
           </h1>

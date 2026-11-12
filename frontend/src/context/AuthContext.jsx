@@ -34,6 +34,15 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
+  // api.js fires "auth:expired" when the server rejects our token.
+  // Clearing the user makes ProtectedRoute redirect to /login.
+  useEffect(() => {
+    const handleExpired = () => setUser(null);
+
+    window.addEventListener("auth:expired", handleExpired);
+    return () => window.removeEventListener("auth:expired", handleExpired);
+  }, []);
+
   // Login
   const login = async (email, password) => {
     const response = await api.post("/auth/login", {

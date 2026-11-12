@@ -15,8 +15,7 @@ const getCart = async (req, res, next) => {
         ci.quantity,
         (p.price * ci.quantity) AS subtotal
       FROM cart_items ci
-      JOIN products p
-        ON ci.product_id = p.id
+      JOIN products p ON ci.product_id = p.id
       WHERE ci.user_id = $1
       ORDER BY ci.created_at DESC
       `,
@@ -38,19 +37,13 @@ const getCart = async (req, res, next) => {
   }
 };
 
-
-
-// POST /api/cart
+// POST /api/cart   body: { product_id, quantity }  (validated by addToCartSchema)
 const addToCart = async (req, res, next) => {
   try {
-    const { product_id, quantity } = req.body;
+    const { product_id, quantity } = req.body; // numbers, thanks to the validator
 
     const productResult = await pool.query(
-      `
-      SELECT id, name, price, stock
-      FROM products
-      WHERE id = $1
-      `,
+      "SELECT id, stock FROM products WHERE id = $1",
       [product_id]
     );
 
@@ -61,68 +54,42 @@ const addToCart = async (req, res, next) => {
       });
     }
 
-    const product = productResult.rows[0];
-
-    if (quantity > product.stock) {
-      return res.status(400).json({
-        success: false,
-        message: "Not enough stock available",
-      });
-    }
+    const { stock } = productResult.rows[0];
 
     const existingItem = await pool.query(
-      `
-      SELECT id, quantity
-      FROM cart_items
-      WHERE user_id = $1
-      AND product_id = $2
-      `,
+      "SELECT quantity FROM cart_items WHERE user_id = $1 AND product_id = $2",
       [req.user.id, product_id]
     );
 
-    if (existingItem.rows.length > 0) {
-      const newQuantity =
-        existingItem.rows[0].quantity + quantity;
+    const currentQuantity = existingItem.rows[0]?.quantity ?? 0;
+    const newQuantity = currentQuantity + quantity;
 
-      if (newQuantity > product.stock) {
-        return res.status(400).json({
-          success: false,
-          message: "Requested quantity exceeds available stock",
-        });
-      }
-
-      const result = await pool.query(
-        `
-        UPDATE cart_items
-        SET quantity = $1,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2
-        RETURNING *
-        `,
-        [newQuantity, existingItem.rows[0].id]
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Cart updated",
-        item: result.rows[0],
+    if (newQuantity > stock) {
+      return res.status(400).json({
+        success: false,
+        message: "Requested quantity exceeds available stock",
       });
     }
 
+    // Insert, or add to the existing line if the product is already in the cart.
+    // Relies on UNIQUE(user_id, product_id) in cart_items.
     const result = await pool.query(
       `
-      INSERT INTO cart_items
-        (user_id, product_id, quantity)
-      VALUES
-        ($1, $2, $3)
+      INSERT INTO cart_items (user_id, product_id, quantity)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, product_id)
+      DO UPDATE SET quantity = EXCLUDED.quantity,
+                    updated_at = CURRENT_TIMESTAMP
       RETURNING *
       `,
-      [req.user.id, product_id, quantity]
+      [req.user.id, product_id, newQuantity]
     );
 
-    res.status(201).json({
+    const isNew = existingItem.rows.length === 0;
+
+    res.status(isNew ? 201 : 200).json({
       success: true,
-      message: "Product added to cart",
+      message: isNew ? "Product added to cart" : "Cart updated",
       item: result.rows[0],
     });
   } catch (error) {
@@ -130,52 +97,14 @@ const addToCart = async (req, res, next) => {
   }
 };
 
-
-
-// DELETE /api/cart/:productId
-const removeFromCart = async (req, res, next) => {
-  try {
-    const { productId } = req.params;
-
-    const result = await pool.query(
-      `
-      DELETE FROM cart_items
-      WHERE user_id = $1
-      AND product_id = $2
-      RETURNING *
-      `,
-      [req.user.id, productId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Cart item not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Product removed from cart",
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// PUT /api/cart/:productId
+// PUT /api/cart/:productId   body: { quantity }  (validated by updateCartSchema)
 const updateCartItem = async (req, res, next) => {
   try {
     const { productId } = req.params;
     const { quantity } = req.body;
 
     const productResult = await pool.query(
-      `
-      SELECT stock
-      FROM products
-      WHERE id = $1
-      `,
+      "SELECT stock FROM products WHERE id = $1",
       [productId]
     );
 
@@ -198,8 +127,7 @@ const updateCartItem = async (req, res, next) => {
       UPDATE cart_items
       SET quantity = $1,
           updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $2
-      AND product_id = $3
+      WHERE user_id = $2 AND product_id = $3
       RETURNING *
       `,
       [quantity, req.user.id, productId]
@@ -222,16 +150,42 @@ const updateCartItem = async (req, res, next) => {
   }
 };
 
+// DELETE /api/cart/:productId
+const removeFromCart = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+
+    const result = await pool.query(
+      `
+      DELETE FROM cart_items
+      WHERE user_id = $1 AND product_id = $2
+      RETURNING *
+      `,
+      [req.user.id, productId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart item not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product removed from cart",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // DELETE /api/cart
 const clearCart = async (req, res, next) => {
   try {
-    await pool.query(
-      `
-      DELETE FROM cart_items
-      WHERE user_id = $1
-      `,
-      [req.user.id]
-    );
+    await pool.query("DELETE FROM cart_items WHERE user_id = $1", [
+      req.user.id,
+    ]);
 
     res.status(200).json({
       success: true,
@@ -241,7 +195,6 @@ const clearCart = async (req, res, next) => {
     next(error);
   }
 };
-
 
 module.exports = {
   getCart,

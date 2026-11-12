@@ -25,6 +25,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint (stop the deploy if it fails)
+        working-directory: frontend
+        run: npm run lint
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 

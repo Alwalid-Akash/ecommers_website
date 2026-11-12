@@ -3,8 +3,9 @@ const pool = require("../config/db");
 // GET /api/products
 const getProducts = async (req, res, next) => {
   try {
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 100;
+    // Clamp paging values so ?limit=1000000 can't dump the whole table.
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
     const offset = (page - 1) * limit;
 
     const { category, sort } = req.query;
@@ -140,13 +141,7 @@ const createProduct = async (req, res, next) => {
       image_url,
     } = req.body;
 
-    if (!name || price === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: "Name and price are required",
-      });
-    }
-
+    // Body already validated by productSchema (see productRoutes.js)
     const result = await pool.query(
       `
       INSERT INTO products
@@ -165,8 +160,8 @@ const createProduct = async (req, res, next) => {
         name,
         description || null,
         price,
-        stock ?? 0,
-        category_id || null,
+        stock,
+        category_id ?? null,
         image_url || null,
       ]
     );
@@ -195,14 +190,7 @@ const updateProduct = async (req, res, next) => {
       image_url,
     } = req.body;
 
-    if (!name || price === undefined || stock === undefined) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Name, price, and stock are required",
-      });
-    }
-
+    // Body already validated by productSchema (see productRoutes.js)
     const result = await pool.query(
       `
       UPDATE products
@@ -222,7 +210,7 @@ const updateProduct = async (req, res, next) => {
         description || null,
         price,
         stock,
-        category_id || null,
+        category_id ?? null,
         image_url || null,
         id,
       ]
@@ -272,6 +260,14 @@ const deleteProduct = async (req, res, next) => {
       product: result.rows[0],
     });
   } catch (error) {
+    // 23503 = foreign key violation: the product appears in past orders
+    if (error.code === "23503") {
+      return res.status(409).json({
+        success: false,
+        message:
+          "This product appears in existing orders and can't be deleted. Set its stock to 0 instead.",
+      });
+    }
     next(error);
   }
 };

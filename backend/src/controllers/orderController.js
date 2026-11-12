@@ -1,11 +1,16 @@
 const pool = require("../config/db");
 
+// POST /api/orders  (checkout)
+// Runs as ONE transaction: either every step succeeds, or nothing changes.
 const createOrder = async (req, res, next) => {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
+    // FOR UPDATE OF p locks these product rows until COMMIT/ROLLBACK.
+    // If two customers check out the last item at the same time, the second
+    // waits here and then sees the updated (lower) stock, preventing overselling.
     const cartResult = await client.query(
       `
       SELECT
@@ -18,68 +23,56 @@ const createOrder = async (req, res, next) => {
       JOIN products p
         ON ci.product_id = p.id
       WHERE ci.user_id = $1
+      ORDER BY p.id
+      FOR UPDATE OF p
       `,
       [req.user.id]
     );
 
-    if (cartResult.rows.length === 0) {
-      await client.query("ROLLBACK");
+    const cartItems = cartResult.rows;
 
+    if (cartItems.length === 0) {
+      await client.query("ROLLBACK");
       return res.status(400).json({
         success: false,
         message: "Your cart is empty",
       });
     }
 
-    const cartItems = cartResult.rows;
-
-    for (const item of cartItems) {
-      if (item.quantity > item.stock) {
-        await client.query("ROLLBACK");
-
-        return res.status(400).json({
-          success: false,
-          message: `Not enough stock for ${item.name}`,
-        });
-      }
+    const outOfStock = cartItems.find((item) => item.quantity > item.stock);
+    if (outOfStock) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        success: false,
+        message: `Not enough stock for ${outOfStock.name}`,
+      });
     }
 
     const totalAmount = cartItems.reduce(
-      (sum, item) =>
-        sum + Number(item.price) * item.quantity,
+      (sum, item) => sum + Number(item.price) * item.quantity,
       0
     );
 
     const orderResult = await client.query(
       `
-      INSERT INTO orders
-        (user_id, total_amount, status)
-      VALUES
-        ($1, $2, 'pending')
+      INSERT INTO orders (user_id, total_amount, status)
+      VALUES ($1, $2, 'pending')
       RETURNING *
       `,
-      [
-        req.user.id,
-        Number(totalAmount.toFixed(2)),
-      ]
+      [req.user.id, Number(totalAmount.toFixed(2))]
     );
 
     const order = orderResult.rows[0];
 
     for (const item of cartItems) {
+      // Save the price at purchase time, so later price changes
+      // don't alter past orders.
       await client.query(
         `
-        INSERT INTO order_items
-          (order_id, product_id, quantity, price)
-        VALUES
-          ($1, $2, $3, $4)
+        INSERT INTO order_items (order_id, product_id, quantity, price)
+        VALUES ($1, $2, $3, $4)
         `,
-        [
-          order.id,
-          item.product_id,
-          item.quantity,
-          item.price,
-        ]
+        [order.id, item.product_id, item.quantity, item.price]
       );
 
       await client.query(
@@ -89,20 +82,13 @@ const createOrder = async (req, res, next) => {
             updated_at = CURRENT_TIMESTAMP
         WHERE id = $2
         `,
-        [
-          item.quantity,
-          item.product_id,
-        ]
+        [item.quantity, item.product_id]
       );
     }
 
-    await client.query(
-      `
-      DELETE FROM cart_items
-      WHERE user_id = $1
-      `,
-      [req.user.id]
-    );
+    await client.query("DELETE FROM cart_items WHERE user_id = $1", [
+      req.user.id,
+    ]);
 
     await client.query("COMMIT");
 
@@ -112,25 +98,23 @@ const createOrder = async (req, res, next) => {
       order,
     });
   } catch (error) {
-    await client.query("ROLLBACK");
-
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("Rollback failed:", rollbackError);
+    }
     next(error);
   } finally {
-    client.release();
+    client.release(); // always return the connection to the pool
   }
 };
 
-
+// GET /api/orders  (only the logged-in user's orders)
 const getOrders = async (req, res, next) => {
   try {
     const result = await pool.query(
       `
-      SELECT
-        id,
-        total_amount,
-        status,
-        created_at,
-        updated_at
+      SELECT id, total_amount, status, created_at, updated_at
       FROM orders
       WHERE user_id = $1
       ORDER BY created_at DESC
@@ -147,23 +131,16 @@ const getOrders = async (req, res, next) => {
   }
 };
 
-
+// GET /api/orders/:id  (404 if it isn't the user's order, so ids can't be probed)
 const getOrderById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     const orderResult = await pool.query(
       `
-      SELECT
-        id,
-        user_id,
-        total_amount,
-        status,
-        created_at,
-        updated_at
+      SELECT id, user_id, total_amount, status, created_at, updated_at
       FROM orders
-      WHERE id = $1
-      AND user_id = $2
+      WHERE id = $1 AND user_id = $2
       `,
       [id, req.user.id]
     );
@@ -185,8 +162,7 @@ const getOrderById = async (req, res, next) => {
         oi.price,
         (oi.quantity * oi.price) AS subtotal
       FROM order_items oi
-      JOIN products p
-        ON oi.product_id = p.id
+      JOIN products p ON oi.product_id = p.id
       WHERE oi.order_id = $1
       `,
       [id]
@@ -201,8 +177,6 @@ const getOrderById = async (req, res, next) => {
     next(error);
   }
 };
-
-
 
 module.exports = {
   createOrder,

@@ -88,3 +88,7 @@ coverage/
 .vercel
 .env*
 .vercel
+
+# Example env files are safe to commit (no real secrets)
+!.env.example
+!**/.env.example

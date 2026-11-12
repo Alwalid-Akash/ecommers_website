@@ -64,13 +64,7 @@ const createCategory = async (req, res, next) => {
   try {
     const { name, description } = req.body;
 
-    if (!name || !name.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Category name is required",
-      });
-    }
-
+    // Body already validated by categorySchema (see categoryRoutes.js)
     const result = await pool.query(
       `
       INSERT INTO categories
@@ -79,8 +73,8 @@ const createCategory = async (req, res, next) => {
       RETURNING *
       `,
       [
-        name.trim(),
-        description?.trim() || null,
+        name,
+        description || null,
       ]
     );
 
@@ -107,13 +101,7 @@ const updateCategory = async (req, res, next) => {
     const { id } = req.params;
     const { name, description } = req.body;
 
-    if (!name || !name.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Category name is required",
-      });
-    }
-
+    // Body already validated by categorySchema (see categoryRoutes.js)
     const result = await pool.query(
       `
       UPDATE categories
@@ -124,8 +112,8 @@ const updateCategory = async (req, res, next) => {
       RETURNING *
       `,
       [
-        name.trim(),
-        description?.trim() || null,
+        name,
+        description || null,
         id,
       ]
     );

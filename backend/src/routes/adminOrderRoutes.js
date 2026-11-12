@@ -5,16 +5,16 @@ const {
   getOrderByIdAdmin,
   updateOrderStatus,
 } = require("../controllers/adminOrderController");
-
-const { protect, authorize } = require("../middleware/roleMiddleware");
+const validate = require("../middleware/validate");
+const { orderStatusSchema } = require("../validators/orderValidator");
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.use(protect);
-router.use(authorize("admin"));
+router.use(protect, adminOnly);
 
 router.get("/", getAllOrders);
 router.get("/:id", getOrderByIdAdmin);
-router.put("/:id/status", updateOrderStatus);
+router.put("/:id/status", validate(orderStatusSchema), updateOrderStatus);
 
 module.exports = router;

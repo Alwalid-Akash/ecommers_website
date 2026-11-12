@@ -89,20 +89,7 @@ const updateOrderStatus = async (req, res, next) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const allowedStatuses = [
-      "pending",
-      "processing",
-      "shipped",
-      "delivered",
-      "cancelled",
-    ];
-
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid order status",
-      });
-    }
+    // status already validated by orderStatusSchema (see adminOrderRoutes.js)
 
     const result = await pool.query(
       `

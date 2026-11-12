@@ -11,9 +11,8 @@ const categorySchema = z.object({
     .string()
     .trim()
     .max(500, "Description cannot exceed 500 characters")
-    .optional(),
+    .optional()
+    .nullable(),
 });
 
-module.exports = {
-  categorySchema,
-};
+module.exports = { categorySchema };

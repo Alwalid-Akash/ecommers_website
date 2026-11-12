@@ -1,4 +1,4 @@
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
     id SERIAL PRIMARY KEY,
 
     user_id INTEGER NOT NULL
@@ -20,8 +20,8 @@ CREATE TABLE cart_items (
 );
 
 
-CREATE INDEX idx_cart_items_user_id
+CREATE INDEX IF NOT EXISTS idx_cart_items_user_id
 ON cart_items(user_id);
 
-CREATE INDEX idx_cart_items_product_id
+CREATE INDEX IF NOT EXISTS idx_cart_items_product_id
 ON cart_items(product_id);

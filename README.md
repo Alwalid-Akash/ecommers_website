@@ -47,6 +47,13 @@ The project provides separate functionality for customers and administrators, in
 - View individual orders
 - Update order status
 
+### 🤖 AI Shopping Assistant
+
+- Chat widget on every page, powered by Google Gemini (free tier)
+- Tool calling: the AI searches the real catalogue through read-only functions
+- Product cards use database prices and stock, never text written by the AI
+- Guardrails: validated input, rate limiting, no write access, prompt-injection rules
+
 ### 🔐 Security
 
 - JWT authentication
@@ -127,6 +134,11 @@ npm run dev               # http://localhost:3000
 | `CORS_ORIGIN` | in production | `https://myshop.vercel.app,http://localhost:5173` | Allowed frontend origins (comma-separated) |
 | `AUTH_RATE_LIMIT_MAX` | | `20` | Login/register attempts per IP per 15 min |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | for seeding | | Admin account created by `npm run db:seed` |
+| `GEMINI_API_KEY` | for the assistant | from aistudio.google.com | Google Gemini API key |
+| `GEMINI_MODEL` | | `gemini-3.5-flash-lite` | Main Gemini model (fast) |
+| `GEMINI_FALLBACK_MODEL` | | `gemini-3.8-flash` | Tried once if the main model is busy, slow or retired |
+| `ASSISTANT_DEBUG` | local only | `true` | Shows the real AI error and the answering model in the chat. Never set on Render |
+| `ASSISTANT_RATE_LIMIT_MAX` | | `10` | Assistant messages per IP per minute |
 
 ## 2. Frontend
 
@@ -178,6 +190,32 @@ The tests use Node's built-in test runner and a fake database, so they need no P
 | GET / PUT | `/api/admin/orders`, `/api/admin/orders/:id/status` | Admin |
 | GET | `/api/admin/dashboard/stats` | Admin |
 | GET | `/api/health` | Public (checks the database too) |
+| POST | `/api/assistant` | Public (rate limited). Body: `{ message, history }` |
+
+---
+
+# 🤖 How the AI Assistant Works
+
+```
+React ChatAssistant ──POST /api/assistant──► assistantController (agent loop, max 4 rounds)
+                                               │ 1. question + tool list → Gemini
+                                               │ 2. Gemini: "call search_products({query, max_price})"
+                                               │ 3. our code runs read-only SQL
+                                               │ 4. results → Gemini → final answer
+      ◄──── { reply, products } ──────────────┘   (cards use DB data)
+```
+
+| File | Role |
+|---|---|
+| `services/gemini.js` | Talks to Google Gemini (native API). If the main model is busy, slow or retired, it tries the fallback model once |
+| `services/assistantTools.js` | The 3 read-only tools: `search_products`, `get_product_details`, `list_categories` |
+| `controllers/assistantController.js` | System prompt + agent loop + product cards |
+| `validators/assistantValidator.js` | Validates the message and the untrusted chat history |
+| `frontend/src/components/ChatAssistant.jsx` | Floating chat widget |
+
+The model never writes SQL. It can only ask for the three tools, its arguments are validated with Zod, and unknown tools are refused.
+
+**Troubleshooting:** set `ASSISTANT_DEBUG=true` in your local `backend/.env` and restart the backend. The chat then shows Google's real error message.
 
 ---
 
@@ -189,5 +227,7 @@ The tests use Node's built-in test runner and a fake database, so they need no P
 - **The schema is managed with plain SQL files**, not versioned migrations (e.g. node-pg-migrate).
 - **The frontend has no automated tests yet.**
 - **No payment integration.** Orders are created as `pending`.
-- **Next:** search, image uploads, customer order cancellation with stock restore, Swagger docs.
+- **The assistant searches with keywords** (Postgres full-text search). Stage 2: semantic search (RAG) with pgvector and Gemini embeddings.
+- **Free AI quota is limited.** When it runs out, users see an "assistant is busy" message.
+- **Next:** image uploads, customer order cancellation with stock restore, Swagger docs.
 

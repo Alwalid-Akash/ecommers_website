@@ -1,6 +1,7 @@
 import { Routes, Route, Link } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import ChatAssistant from "./components/ChatAssistant";
 import "./App.css";
 
 import Products from "./pages/Products";
@@ -209,6 +210,8 @@ function App() {
 
         </Routes>
       </main>
+
+      <ChatAssistant />
       <footer className="site-footer">
         <div className="container footer-content">
           <div className="footer-brand">

@@ -11,6 +11,7 @@ const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
 const adminDashboardRoutes = require("./routes/adminDashboardRoutes");
+const assistantRoutes = require("./routes/assistantRoutes");
 const errorHandler = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -57,6 +58,9 @@ app.use("/api/orders", orderRoutes);
 
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/admin", adminDashboardRoutes);
+
+// AI shopping assistant (Gemini + read-only product tools)
+app.use("/api/assistant", assistantRoutes);
 
 // Unknown routes → JSON 404 instead of Express's HTML page
 app.use((req, res) => {

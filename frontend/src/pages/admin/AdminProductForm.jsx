@@ -431,11 +431,15 @@ function AdminProductForm() {
                 <input
                   id="image_url"
                   name="image_url"
-                  type="url"
+                  type="text"
                   className="form-control"
+                  placeholder="/images/products/photo.jpg"
                   value={formData.image_url}
                   onChange={handleChange}
                 />
+                <div className="form-text">
+                  A file in frontend/public/images/products/ or a full https:// link
+                </div>
               </div>
             </div>
 

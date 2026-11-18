@@ -25,10 +25,15 @@ const productSchema = z.object({
     .optional()
     .nullable(),
 
+  // Either a full web address (https://…) or an image inside the frontend's
+  // public folder, e.g. "/images/products/t-shirt.jpg".
   image_url: z
     .string()
     .trim()
-    .url("Image URL must be a valid URL")
+    .refine(
+      (value) => /^https?:\/\/\S+$/i.test(value) || /^\/[\w./-]+$/.test(value),
+      "Image must be a web address (https://…) or a path like /images/products/photo.jpg"
+    )
     .optional()
     .nullable(),
 });

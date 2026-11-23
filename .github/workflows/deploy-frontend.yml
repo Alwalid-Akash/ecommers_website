@@ -33,6 +33,10 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
+      - name: Tests (stop the deploy if they fail)
+        working-directory: frontend
+        run: npm test
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 

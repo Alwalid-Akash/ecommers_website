@@ -67,11 +67,12 @@ function Login() {
             <form onSubmit={handleSubmit}>
 
               <div className="mb-3">
-                <label className="form-label">
+                <label className="form-label" htmlFor="email">
                   Email
                 </label>
 
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   className="form-control"
@@ -82,11 +83,12 @@ function Login() {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">
+                <label className="form-label" htmlFor="password">
                   Password
                 </label>
 
                 <input
+                  id="password"
                   type="password"
                   name="password"
                   className="form-control"

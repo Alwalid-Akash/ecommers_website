@@ -5,6 +5,9 @@
 //   const { text, toolCalls } = await chat.send();   // 1. ask Gemini
 //   chat.addToolResults(results);                    // 2. give it the search results
 //   await chat.send();                               // 3. ask again → final answer
+//
+// How RAG uses it (see rag.js):
+//   const [vector] = await embed(["warm winter jacket"], { kind: "query" });
 
 const API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const TIMEOUT_MS = 25_000; // give up on a slow answer after 25 seconds
@@ -21,11 +24,12 @@ class AIError extends Error {
 // ─────────────────────────────────────────────────────────────
 // 1) One HTTP request to Gemini
 // ─────────────────────────────────────────────────────────────
-async function callGemini(model, body) {
+// `method` is "generateContent" (chat) or "batchEmbedContents" (embeddings).
+async function callGemini(model, body, method = "generateContent") {
   let response;
 
   try {
-    response = await fetch(`${API_URL}/${model}:generateContent`, {
+    response = await fetch(`${API_URL}/${model}:${method}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -171,4 +175,69 @@ function createChat({ system, history = [], message, tools = [] }) {
   };
 }
 
-module.exports = { createChat, AIError };
+// ─────────────────────────────────────────────────────────────
+// 4) Embeddings for RAG: text → a vector (a list of numbers)
+//    Texts with a similar MEANING get similar vectors, even when they share
+//    no words ("warm jacket" ≈ "winter coat"). pgvector compares them.
+// ─────────────────────────────────────────────────────────────
+
+// Settings: vector size (must match vector(768) in config/rag.sql)
+// and how many texts we send to Google in one request.
+const EMBEDDING_DIMENSIONS = 768;
+const EMBED_BATCH_SIZE = 50;
+
+// Which embedding model to use (can be changed in .env)
+const embeddingModel = () => process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-2";
+
+// Tells the model what the text is for, with the prefix Google recommends:
+//   kind "query":    a customer question, e.g. "gift for a coffee lover"
+//   kind "document": a stored text, e.g. { title: "Coffee Maker", text: "..." }
+function embeddingInput(item, kind) {
+  return kind === "query"
+    ? `task: search result | query: ${item}`
+    : `title: ${item.title || "none"} | text: ${item.text}`;
+}
+
+// Turns a list of texts into a list of vectors (same order).
+async function embed(items, { kind }) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new AIError("GEMINI_API_KEY is not set");
+  }
+
+  const model = embeddingModel();
+  const vectors = [];
+
+  // Send the texts in groups of 50
+  for (let start = 0; start < items.length; start += EMBED_BATCH_SIZE) {
+    const batch = items.slice(start, start + EMBED_BATCH_SIZE);
+
+    const data = await callGemini(
+      model,
+      {
+        // One request per text, so each text gets its own vector
+        requests: batch.map((item) => ({
+          model: `models/${model}`,
+          content: { parts: [{ text: embeddingInput(item, kind) }] },
+          outputDimensionality: EMBEDDING_DIMENSIONS,
+        })),
+      },
+      "batchEmbedContents"
+    );
+
+    // Safety check: every vector must have exactly 768 numbers
+    for (const embedding of data.embeddings ?? []) {
+      if (embedding.values?.length !== EMBEDDING_DIMENSIONS) {
+        throw new AIError(`${model} returned a vector of the wrong size`);
+      }
+      vectors.push(embedding.values);
+    }
+  }
+
+  // Safety check: one vector per text
+  if (vectors.length !== items.length) {
+    throw new AIError(`${model} returned ${vectors.length} vectors for ${items.length} texts`);
+  }
+  return vectors;
+}
+
+module.exports = { createChat, AIError, embed, embeddingModel, EMBEDDING_DIMENSIONS };

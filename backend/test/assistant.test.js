@@ -5,6 +5,8 @@ process.env.ASSISTANT_RATE_LIMIT_MAX = "1000";
 
 const path = require("node:path");
 
+console.warn = () => {}; // hide the expected "fell back to keywords" warnings
+
 const llmPath = path.join(__dirname, "..", "src", "services", "gemini.js");
 const fakeSteps = []; // what the fake model answers, in order: { text, toolCalls }
 const chats = [];     // every chat the controller opened
@@ -24,6 +26,11 @@ require.cache[llmPath] = {
   loaded: true,
   exports: {
     AIError,
+    // RAG: no real embeddings here → the tools fall back to keyword search
+    embeddingModel: () => "fake-embedding-model",
+    embed: async () => {
+      throw new AIError("no embeddings in these tests");
+    },
     createChat: (options) => {
       if (fakeSteps[0] === "MISSING_KEY") {
         fakeSteps.shift();
@@ -181,5 +188,10 @@ test("the controller sends the system prompt, history and tools to the model", a
   assert.match(options.system, /shopping assistant/);
   assert.equal(options.message, "hello");
   assert.deepEqual(options.history, [{ role: "user", content: "earlier" }]);
-  assert.deepEqual(options.tools.map((t) => t.name), ["search_products", "get_product_details", "list_categories"]);
+  assert.deepEqual(options.tools.map((t) => t.name), [
+    "search_products",
+    "get_product_details",
+    "list_categories",
+    "search_store_info",
+  ]);
 });

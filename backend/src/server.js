@@ -19,4 +19,7 @@ const PORT = process.env.PORT || 3000;
 // 0.0.0.0 so the server is reachable from outside a Docker container
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
+
+  // RAG: build the AI search index in the background (only changed texts are embedded)
+  require("./services/rag").scheduleSync("startup");
 });

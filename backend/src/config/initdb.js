@@ -5,8 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const pool = require('./db'); // same connection as the app
 
-// Order matters: parent tables first
-const SQL_FILES = ['schema.sql', 'cart_item.sql'];
+// Order matters: parent tables first (rag.sql needs the products table)
+const SQL_FILES = ['schema.sql', 'cart_item.sql', 'rag.sql'];
 
 async function initDb() {
   try {

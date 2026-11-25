@@ -4,7 +4,9 @@ import api from "../services/api";
 
 const WELCOME = {
   role: "assistant",
-  content: "Hi! I can help you find products. Try: “headphones under 100”.",
+  content:
+    "Hi! I can help you find products and answer questions about shipping, returns and payment. " +
+    "Try: “a gift for a coffee lover” or “How long does delivery take?”",
 };
 
 // Floating AI shopping assistant, shown on every page.

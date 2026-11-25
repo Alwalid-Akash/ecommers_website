@@ -1,4 +1,6 @@
 const pool = require("../config/db");
+// RAG: keeps the AI search index up to date after changes (runs in the background)
+const { scheduleSync } = require("../services/rag");
 
 // GET /api/products
 const getProducts = async (req, res, next) => {
@@ -166,6 +168,8 @@ const createProduct = async (req, res, next) => {
       ]
     );
 
+    scheduleSync("createProduct"); // update the AI search index in the background
+
     res.status(201).json({
       success: true,
       message: "Product created successfully",
@@ -223,6 +227,8 @@ const updateProduct = async (req, res, next) => {
       });
     }
 
+    scheduleSync("updateProduct"); // update the AI search index in the background
+
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
@@ -253,6 +259,8 @@ const deleteProduct = async (req, res, next) => {
         message: "Product not found",
       });
     }
+
+    scheduleSync("deleteProduct"); // update the AI search index in the background
 
     res.status(200).json({
       success: true,

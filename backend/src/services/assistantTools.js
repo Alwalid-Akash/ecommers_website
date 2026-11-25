@@ -3,8 +3,13 @@
 //   2. a Zod schema: the model's arguments are untrusted input, like a form
 //   3. an implementation: our own read-only SQL
 // The model never writes SQL and never touches the database directly.
+//
+// Searches use RAG (see rag.js): they find texts by MEANING, not just words.
+// If that's unavailable (no index yet, Google busy), they fall back to
+// classic keyword search, so the assistant keeps working.
 const { z } = require("zod");
 const pool = require("../config/db");
+const rag = require("./rag");
 
 // ─────────────────────────────────────────────────────────────
 // 1) DEFINITIONS (what Gemini sees, in Gemini's "functionDeclarations" format)
@@ -13,13 +18,15 @@ const toolDefinitions = [
   {
     name: "search_products",
     description:
-      "Search the store's products. Use this for ANY question about which products exist, prices, or availability.",
+      "Search the store's products by meaning. Use this for ANY question about which products exist, prices, or availability. " +
+      "Results include a relevance score (0-1); only recommend products that really match what the customer wants.",
     parameters: {
       type: "object",
       properties: {
         query: {
           type: "string",
-          description: "Keywords, e.g. 'wireless headphones'. Empty string to browse everything.",
+          description:
+            "What the customer is looking for, in their own words, e.g. 'gift for a coffee lover' or 'something to keep me warm'. Empty string to browse everything.",
         },
         category: {
           type: "string",
@@ -49,6 +56,20 @@ const toolDefinitions = [
     name: "list_categories",
     description: "List all product categories with how many products each has.",
   },
+  // NEW (RAG): searches the shop info pages in backend/knowledge/
+  {
+    name: "search_store_info",
+    description:
+      "Search the shop's information pages: shipping and delivery times, costs, returns and refunds, payment, " +
+      "accounts, orders, order status and contact details. Use this for ANY question about how the shop works.",
+    parameters: {
+      type: "object",
+      properties: {
+        question: { type: "string", description: "The customer's question, e.g. 'how long does delivery take?'" },
+      },
+      required: ["question"],
+    },
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -67,6 +88,11 @@ const detailsArgs = z.object({
   product_id: z.coerce.number().int().positive(),
 });
 
+// search_store_info: a non-empty question, max 300 characters
+const storeInfoArgs = z.object({
+  question: z.string().trim().min(1).max(300),
+});
+
 // ORDER BY can't be a $parameter, so the model picks a KEY and we map it
 // to fixed SQL. It can never inject its own SQL text.
 const ORDER_BY = {
@@ -79,9 +105,25 @@ const ORDER_BY = {
 // ─────────────────────────────────────────────────────────────
 // 3) IMPLEMENTATIONS (read-only SQL)
 // ─────────────────────────────────────────────────────────────
+// search_products: try meaning-based search (RAG) first, keyword search as backup
 async function searchProducts(rawArgs) {
-  const { query, category, min_price, max_price, in_stock_only, sort } =
-    searchArgs.parse(rawArgs);
+  const args = searchArgs.parse(rawArgs);
+
+  // A real search phrase → search by meaning (RAG) first
+  if (args.query && args.sort !== "newest") {
+    try {
+      const result = await rag.searchProducts(args);
+      if (result.count > 0) return result;
+    } catch (error) {
+      console.warn(`⚠️  Product search fell back to keywords: ${error.message}`);
+    }
+  }
+
+  return keywordSearchProducts(args);
+}
+
+// Classic keyword search (also used to browse with filters and no query)
+async function keywordSearchProducts({ query, category, min_price, max_price, in_stock_only, sort }) {
 
   // "Wireless Headphones!" → "wireless or headphones"
   // Postgres full-text search: matches ANY word, ranks best matches first,
@@ -147,6 +189,17 @@ async function getProductDetails(rawArgs) {
   return { product: { ...product, price: Number(product.price) } };
 }
 
+// search_store_info: the shop info sections that best answer the question
+async function searchStoreInfo(rawArgs) {
+  const { question } = storeInfoArgs.parse(rawArgs);
+  const result = await rag.searchKnowledge(question);
+
+  if (result.sources.length === 0) {
+    return { sources: [], note: "Nothing about this in the shop info. Suggest contacting support." };
+  }
+  return result;
+}
+
 async function listCategories() {
   const result = await pool.query(`
     SELECT c.name, COUNT(p.id)::int AS product_count
@@ -165,6 +218,7 @@ const handlers = {
   search_products: searchProducts,
   get_product_details: getProductDetails,
   list_categories: listCategories,
+  search_store_info: searchStoreInfo,
 };
 
 async function runTool(name, rawArguments) {

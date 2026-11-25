@@ -5,7 +5,7 @@ process.env.GEMINI_FALLBACK_MODEL = "gemini-3.8-flash";
 
 const { test, beforeEach, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
-const { createChat, AIError } = require("../src/services/gemini");
+const { createChat, AIError, embed } = require("../src/services/gemini");
 
 const API = "https://generativelanguage.googleapis.com/v1beta/models";
 const realFetch = global.fetch;
@@ -168,3 +168,58 @@ test("a missing API key gives a clear error", () => {
     process.env.GEMINI_API_KEY = key;
   }
 });
+
+// ── Embeddings (RAG) ───────────────────────────────────────────
+
+// Fake Google answer with `count` vectors of `size` numbers
+const vectors = (count, size = 768) => [200, { embeddings: Array.from({ length: count }, () => ({ values: Array(size).fill(0.1) })) }];
+
+test("embed() turns a question into a vector with gemini-embedding-2", async () => {
+  global.fetch = fakeGoogle([vectors(1)]);
+
+  const [vector] = await embed(["gift for a coffee lover"], { kind: "query" });
+
+  assert.equal(vector.length, 768);
+  assert.equal(sent[0].url, `${API}/gemini-embedding-2:batchEmbedContents`);
+  assert.equal(sent[0].headers["x-goog-api-key"], "AQ.test-key");
+  assert.deepEqual(sent[0].body.requests[0], {
+    model: "models/gemini-embedding-2",
+    content: { parts: [{ text: "task: search result | query: gift for a coffee lover" }] },
+    outputDimensionality: 768,
+  });
+});
+
+test("embed() formats stored texts as 'title: … | text: …'", async () => {
+  global.fetch = fakeGoogle([vectors(2)]);
+
+  await embed([{ title: "Coffee Maker", text: "Brews 10 cups" }, { text: "No title" }], { kind: "document" });
+
+  const texts = sent[0].body.requests.map((r) => r.content.parts[0].text);
+  assert.deepEqual(texts, ["title: Coffee Maker | text: Brews 10 cups", "title: none | text: No title"]);
+});
+
+test("embed() sends many texts in batches of 50", async () => {
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    sent.push({ url, body });
+    return new Response(JSON.stringify({ embeddings: body.requests.map(() => ({ values: Array(768).fill(0) })) }), { status: 200 });
+  };
+
+  const result = await embed(Array.from({ length: 120 }, (_, i) => `text ${i}`), { kind: "query" });
+
+  assert.equal(result.length, 120);
+  assert.deepEqual(sent.map((r) => r.body.requests.length), [50, 50, 20]);
+});
+
+test("embed() rejects vectors of the wrong size (they wouldn't fit the database)", async () => {
+  global.fetch = fakeGoogle([vectors(1, 3072)]);
+
+  await assert.rejects(embed(["hi"], { kind: "query" }), /wrong size/);
+});
+
+test("embed() reports a busy Google as 'busy'", async () => {
+  global.fetch = fakeGoogle([busy]);
+
+  await assert.rejects(embed(["hi"], { kind: "query" }), (error) => error.busy === true);
+});
+
